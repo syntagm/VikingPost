@@ -1,85 +1,177 @@
 // Ionic Starter App
 
-// angular.module is a global place for creating, registering and retrieving Angular modules
-// 'starter' is the name of this angular module example (also set in a <body> attribute in index.html)
-// the 2nd parameter is an array of 'requires'
-// 'starter.services' is found in services.js
-// 'starter.controllers' is found in controllers.js
-angular.module('starter', ['ionic', 'starter.controllers', 'starter.services'])
-
-.run(function($ionicPlatform) {
-  $ionicPlatform.ready(function() {
-    // Hide the accessory bar by default (remove this to show the accessory bar above the keyboard
-    // for form inputs)
-    if (window.cordova && window.cordova.plugins && window.cordova.plugins.Keyboard) {
-      cordova.plugins.Keyboard.hideKeyboardAccessoryBar(true);
-      cordova.plugins.Keyboard.disableScroll(true);
-
-    }
-    if (window.StatusBar) {
-      // org.apache.cordova.statusbar required
-      StatusBar.styleLightContent();
-    }
-  });
-})
+var example = angular.module('ionicApp', ['ionic'])
 
 .config(function($stateProvider, $urlRouterProvider) {
 
-  // Ionic uses AngularUI Router which uses the concept of states
-  // Learn more here: https://github.com/angular-ui/ui-router
-  // Set up the various states which the app can be in.
-  // Each state's controller can be found in controllers.js
   $stateProvider
-
-  // setup an abstract state for the tabs directive
-    .state('tab', {
-    url: '/tab',
-    abstract: true,
-    templateUrl: 'templates/tabs.html'
-  })
-
-  // Each tab has its own nav history stack:
-
-  .state('tab.dash', {
-    url: '/dash',
-    views: {
-      'tab-dash': {
-        templateUrl: 'templates/tab-dash.html',
-        controller: 'DashCtrl'
-      }
-    }
-  })
-
-  .state('tab.chats', {
-      url: '/chats',
+    .state('tabs', {
+      url: "/tab",
+      abstract: true,
+      templateUrl: "templates/tabs.html"
+    })
+    .state('tabs.home', {
+      url: "/home",
       views: {
-        'tab-chats': {
-          templateUrl: 'templates/tab-chats.html',
-          controller: 'ChatsCtrl'
+        'home-tab': {
+          templateUrl: "templates/home.html",
+          controller: 'HomeTabCtrl'
         }
       }
     })
-    .state('tab.chat-detail', {
-      url: '/chats/:chatId',
+    .state('tabs.facts', {
+      url: "/facts",
       views: {
-        'tab-chats': {
-          templateUrl: 'templates/chat-detail.html',
-          controller: 'ChatDetailCtrl'
+        'home-tab': {
+          templateUrl: "templates/facts.html"
         }
       }
     })
-
-  .state('tab.account', {
-    url: '/account',
-    views: {
-      'tab-account': {
-        templateUrl: 'templates/tab-account.html',
-        controller: 'AccountCtrl'
+    .state('tabs.facts2', {
+      url: "/facts2",
+      views: {
+        'home-tab': {
+          templateUrl: "templates/facts2.html"
+        }
       }
+    })
+    .state('tabs.about', {
+      url: "/about",
+      views: {
+        'about-tab': {
+          templateUrl: "templates/about.html"
+        }
+      }
+    })
+    .state('tabs.navstack', {
+      url: "/navstack",
+      views: {
+        'about-tab': {
+          templateUrl: "templates/nav-stack.html"
+        }
+      }
+    })
+    .state('tabs.contact', {
+      url: "/contact",
+      views: {
+        'contact-tab': {
+          templateUrl: "templates/contact.html"
+        }
+      }
+    });
+
+
+   $urlRouterProvider.otherwise("/tab/home");
+
+})
+// the controller determines what will be shown in the view the html part
+// it is called Home Tab Controller
+/* the controller and view share an object called a scope;
+this object is at the core of its amazing two-way data binding.
+The controller sets properties on the scope, and the view binds to those properties.
+*/
+.controller('HomeTabCtrl', function($scope) {
+  console.log('HomeTabCtrl');
+});
+
+Parse.initialize("VeOAN2nRQDXf2CJ1aypkAeVGIhHbSuI05b1Hwlgd", "BhlQJ6JTZ9mV0kBhViVOKeFPddNKubrz5camfsS8");
+Parse.User.enableRevocableSession()
+
+example.controller("ExampleController", function($scope) {
+
+var Post = Parse.Object.extend("Post");
+
+function checkLogin() {
+  if (Parse.User.current()){
+    console.log("Logged in! "+Parse.User.current().get("username"));
+    $("#current-user").html("User: "+Parse.User.current().get("username"));
+  } else {
+      $("#current-user").html("");
+  }
+}
+
+checkLogin();
+
+$("#logout").click(function(event) {
+  Parse.User.logOut();
+  console.log("You are now logged out!");
+  checkLogin();
+});
+
+$("#login").submit(function(event){
+  event.preventDefault();
+  // this prevents people from refreshing the browser
+  var name = $("#login-name").val();
+  var pass = $("#login-password").val();
+  //so next we have to send parse the uname and pass
+  Parse.User.logIn(name, pass, {
+    success: function(user){
+      //success passes the user object back with a message
+      console.log("You are now logged in!");
+      checkLogin();
+    }, error: function(user, error){
+      console.log("Log in failed!"+error.message);
     }
   });
+});
 
-  // if none of the above states are matched, use this as the fallback
-  $urlRouterProvider.otherwise('/tab/dash');
+$("#signup").submit(function(event){
+  event.preventDefault();
 
+    var name = $("#signup-name").val();
+    var pass = $("#signup-password").val();
+
+    var user = new Parse.User();
+    user.set("username", name);
+    user.set("password", pass);
+
+    user.signUp(null, {
+      success: function(user){
+        checkLogin();
+      }, error: function(user, error){
+        console.log("signup error:"+error.message);
+      }
+    });
+  });
+
+function getPosts() {
+  var query = new Parse.Query(Post);
+  query.find({
+    success: function(results){
+      var output ="";
+      for (var i in results){
+          var title = results[i].get("title");
+          var content = results[i].get("content");
+          output += "<li>";
+          output += "<h3>"+title+"</h3>";
+          output += "<p>"+content+"</p>";
+          output += "</li>";
+          //console.log("Title:"+title)
+      }
+      $("#list-posts").html(output);
+    }, error: function(error){
+      console.log("Query Error:"+error.message);
+    }
+  });
+}
+
+getPosts();
+
+$("#post-form").submit(function(event){
+  event.preventDefault();
+    var title = $("#post-title").val();
+    var content = $("#post-content").val();
+
+    var newPost = new Post();
+    newPost.set("title", title);
+    newPost.set("content", content);
+
+    newPost.save({
+      success: function(){
+
+      }, error: function(error){
+          console.log("Error:" +error.message);
+      }
+    });
+  });
 });
